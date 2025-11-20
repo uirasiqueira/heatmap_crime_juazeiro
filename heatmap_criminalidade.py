@@ -7,10 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/1_MrRnSaHJuUxAoY5-MC3pT-JOjnvEIoE
 """
 
-!pip install streamlit pandas numpy seaborn matplotlib
-
-!pip install streamlit_folium
-
 import streamlit as st
 import pandas as pd
 import folium
