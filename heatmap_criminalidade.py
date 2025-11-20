@@ -61,30 +61,46 @@ def load_data():
         df["LATITUDE"] = pd.to_numeric(df["LATITUDE"], errors="coerce")
         df["LONGITUDE"] = pd.to_numeric(df["LONGITUDE"], errors="coerce")
 
-        # Remover coordenadas inválidas
-        df = df.dropna(subset=["LATITUDE", "LONGITUDE"])
+       # Filtrar Juazeiro-BA
+        df_juazeiro = df[df['MUNICIPIO FATO'].str.contains('Juazeiro', case=False, na=False)]
 
-        return df
+        # Remover linhas sem coordenadas
+        df_juazeiro = df_juazeiro.dropna(subset=['LATITUDE', 'LONGITUDE'])
 
+        return df_juazeiro
     except Exception as e:
         st.error(f"Erro ao carregar CSV: {e}")
-        return None
+        return pd.DataFrame()
 
+# Carregar dados
+df_juazeiro = load_data(GITHUB_URL)
 
-df = load_data()
-
-if df is not None and not df.empty:
-    st.success("Dados carregados com sucesso!")
-
-    # -------------------------
-    # MAPA
-    # -------------------------
-    m = folium.Map(location=[-9.4167, -40.5033], zoom_start=12)
-
-    heat_data = df[["LATITUDE", "LONGITUDE"]].values.tolist()
-    HeatMap(heat_data, radius=10).add_to(m)
-
-    st_folium(m, width=900, height=600)
-
+# Preview dos dados
+if df_juazeiro.empty:
+    st.stop()
 else:
-    st.warning("Nenhum dado carregado.")
+    st.subheader("Preview dos dados filtrados")
+    st.dataframe(df_juazeiro.head())
+
+# =========================
+# Criar mapa
+# =========================
+mapa = folium.Map(
+    location=[df_juazeiro['LATITUDE'].mean(), df_juazeiro['LONGITUDE'].mean()],
+    zoom_start=12
+)
+
+# Criar HeatMap mais escuro e intenso
+heat_data = df_juazeiro[['LATITUDE', 'LONGITUDE']].values.tolist()
+
+HeatMap(
+    heat_data,
+    radius=18,          # aumenta o tamanho dos pontos
+    blur=12,            # deixa mais definido
+    max_zoom=1,         # intensifica contraste
+    min_opacity=0.5,    # aumenta visibilidade
+).add_to(mapa)
+
+# Exibir mapa no Streamlit
+st.subheader("Mapa de Crimes - HeatMap (Intenso)")
+st_folium(mapa, width=900, height=600)
