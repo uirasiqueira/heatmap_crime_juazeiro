@@ -31,7 +31,7 @@ GITHUB_URL = "https://github.com/uirasiqueira/heatmap_crime_juazeiro/blob/main/r
 @st.cache_data
 def load_data(url):
     try:
-        df = pd.read_csv(url, encoding='latin1', sep=',')
+        df = pd.read_csv(url, encoding='latin1', on_bad_lines='skip')
 
         # Corrigir LATITUDE e LONGITUDE
         df['LATITUDE'] = pd.to_numeric(df['LATITUDE'].astype(str).str.replace(',', '.'), errors='coerce')
