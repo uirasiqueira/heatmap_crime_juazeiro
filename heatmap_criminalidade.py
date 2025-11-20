@@ -23,27 +23,26 @@ st.markdown("Visualize a localização dos crimes na cidade em um mapa interativ
 # =========================
 # CSV no GitHub
 # =========================
-GITHUB_URL = "https://github.com/uirasiqueira/heatmap_crime_juazeiro/blob/main/raw/raw.csv?raw=1"
+GITHUB_URL = "https://raw.githubusercontent.com/uirasiqueira/heatmap_crime_juazeiro/main/raw.zip"
+df = pd.read_csv(GITHUB_URL, compression='zip', encoding='latin1')
 # =========================
 # Função para carregar dados
 # =========================
 @st.cache_data
 def load_data(url):
     try:
-        # Lê CSV do GitHub, ignora linhas ruins, trata BOM
-        df = pd.read_csv(url, encoding='utf-8-sig', on_bad_lines='skip', header=0)
+        df = pd.read_csv(url, encoding='latin1', on_bad_lines='skip')
 
-        # Normaliza nomes de coluna de forma segura
-        df.columns = [str(col).strip().replace('\ufeff','').upper() for col in df.columns]
+        # Padronizar nomes das colunas
+        df.columns = df.columns.str.strip().str.upper()
 
         # Corrigir LATITUDE e LONGITUDE
         df['LATITUDE'] = pd.to_numeric(df['LATITUDE'].astype(str).str.replace(',', '.'), errors='coerce')
         df['LONGITUDE'] = pd.to_numeric(df['LONGITUDE'].astype(str).str.replace(',', '.'), errors='coerce')
 
-        # Filtrar Juazeiro-BA
-        df_juazeiro = df[df['MUNICIPIO FATO'].str.contains('Juazeiro', case=False, na=False)]
+        # Filtrar Juazeiro
+        df_juazeiro = df[df['MUNICIPIO FATO'].str.contains('JUAZEIRO', na=False)]
 
-        # Remover linhas sem coordenadas
         df_juazeiro = df_juazeiro.dropna(subset=['LATITUDE', 'LONGITUDE'])
 
         return df_juazeiro
