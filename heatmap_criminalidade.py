@@ -31,15 +31,15 @@ GITHUB_URL = "https://github.com/uirasiqueira/heatmap_crime_juazeiro/blob/main/r
 @st.cache_data
 def load_data(url):
     try:
+        # Lê o CSV, ignorando linhas problemáticas
         df = pd.read_csv(url, encoding='latin1', on_bad_lines='skip')
 
-        # Remove espaços extras nos nomes das colunas
+        # Normaliza nomes das colunas: remove espaços e coloca tudo em maiúsculo
         df.columns = df.columns.str.strip().str.upper()
 
         # Corrigir LATITUDE e LONGITUDE
         df['LATITUDE'] = pd.to_numeric(df['LATITUDE'].astype(str).str.replace(',', '.'), errors='coerce')
         df['LONGITUDE'] = pd.to_numeric(df['LONGITUDE'].astype(str).str.replace(',', '.'), errors='coerce')
-
 
         # Filtrar Juazeiro-BA
         df_juazeiro = df[df['MUNICIPIO FATO'].str.contains('Juazeiro', case=False, na=False)]
