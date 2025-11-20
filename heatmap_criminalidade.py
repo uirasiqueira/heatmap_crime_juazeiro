@@ -88,3 +88,24 @@ HeatMap(
 # Exibir mapa no Streamlit
 st.subheader("Mapa de Crimes - HeatMap (Intenso)")
 st_folium(mapa, width=900, height=600)
+
+
+# -------------------------
+# MAPA 2: Marcadores com detalhes
+# -------------------------
+st.subheader("Mapa 2: Pontos de Criminalidade com Detalhes")
+mapa_markers = folium.Map(location=[df_juazeiro['LATITUDE'].mean(), df_juazeiro['LONGITUDE'].mean()], zoom_start=12)
+
+for idx, row in df_juazeiro.iterrows():
+    folium.Marker(
+        location=[row['LATITUDE'], row['LONGITUDE']],
+        popup=f"""
+        <b>Delito:</b> {row['DELITO']}<br>
+        <b>Bairro:</b> {row['BAIRRO']}<br>
+        <b>Data:</b> {row['DATA_FATO']}<br>
+        <b>Hora:</b> {row['HORA_FATO']}
+        """,
+        icon=folium.Icon(color="red", icon="info-sign")
+    ).add_to(mapa_markers)
+
+st_folium(mapa_markers, width=900, height=600)
