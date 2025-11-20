@@ -31,11 +31,11 @@ GITHUB_URL = "https://github.com/uirasiqueira/heatmap_crime_juazeiro/blob/main/r
 @st.cache_data
 def load_data(url):
     try:
-        # Lê o CSV, ignorando linhas problemáticas
-        df = pd.read_csv(url, encoding='latin1', on_bad_lines='skip')
+        # Lê CSV do GitHub, ignora linhas ruins, trata BOM
+        df = pd.read_csv(url, encoding='utf-8-sig', on_bad_lines='skip', header=0)
 
-        # Normaliza nomes das colunas: remove espaços e coloca tudo em maiúsculo
-       df.columns = df.columns.str.strip().str.replace('\ufeff','').str.upper()
+        # Normaliza nomes de coluna de forma segura
+        df.columns = [str(col).strip().replace('\ufeff','').upper() for col in df.columns]
 
         # Corrigir LATITUDE e LONGITUDE
         df['LATITUDE'] = pd.to_numeric(df['LATITUDE'].astype(str).str.replace(',', '.'), errors='coerce')
