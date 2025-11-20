@@ -35,7 +35,7 @@ def load_data(url):
         df = pd.read_csv(url, encoding='latin1', on_bad_lines='skip')
 
         # Normaliza nomes das colunas: remove espaços e coloca tudo em maiúsculo
-        df.columns = df.columns.str.strip().str.upper()
+       df.columns = df.columns.str.strip().str.replace('\ufeff','').str.upper()
 
         # Corrigir LATITUDE e LONGITUDE
         df['LATITUDE'] = pd.to_numeric(df['LATITUDE'].astype(str).str.replace(',', '.'), errors='coerce')
