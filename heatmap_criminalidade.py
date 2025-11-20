@@ -102,21 +102,25 @@ mapa_markers = folium.Map(
 
 cluster = MarkerCluster().add_to(mapa_markers)
 
-# Cores por tipo de delito
+# Cores em hexadecimal para cada tipo de delito
 color_map = {
-    "HOMICIDIO": "black",
-    "ROUBO": "red",
-    "FURTO": "blue",
-    "AGRESSAO": "orange",
-    "OUTROS": "green"
+    "HOMICIDIO": "#8B0000",  # vermelho escuro
+    "ROUBO": "#FF0000",      # vermelho
+    "FURTO": "#0000FF",      # azul
+    "AGRESSAO": "#FFA500",   # laranja
+    "OUTROS": "#008000"      # verde
 }
 
-# Criar marcadores
 for idx, row in df_juazeiro.iterrows():
     if pd.notna(row['LATITUDE']) and pd.notna(row['LONGITUDE']):
-        cor = color_map.get(str(row['DELITO']).upper(), "gray")
-        folium.Marker(
+        cor = color_map.get(str(row['DELITO']).upper(), "#808080")  # cinza se não definido
+        folium.CircleMarker(
             location=[row['LATITUDE'], row['LONGITUDE']],
+            radius=6,
+            color=cor,
+            fill=True,
+            fill_color=cor,
+            fill_opacity=0.7,
             popup=f"""
             <b>Delito:</b> {row['DELITO']}<br>
             <b>Bairro:</b> {row['BAIRRO']}<br>
@@ -125,8 +129,7 @@ for idx, row in df_juazeiro.iterrows():
             <b>Idade:</b> {row['IDADE']}<br>
             <b>Agente (iniciais):</b> {row['INICIAIS']}<br>
             <b>Ocupação:</b> {row['OCUPACAO']}
-            """,
-            icon=folium.Icon(color=cor, icon="info-sign")
+            """
         ).add_to(cluster)
 
 st_folium(mapa_markers, width=900, height=600)
