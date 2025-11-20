@@ -91,9 +91,9 @@ st_folium(mapa, width=900, height=600)
 
 
 # -------------------------
-# MAPA 2: Marcadores com detalhes
+# MAPA 2: Marcadores com detalhes (agente + ocupação)
 # -------------------------
-st.subheader("Mapa 2: Pontos de Criminalidade com Detalhes")
+st.subheader("Mapa 2: Pontos de Criminalidade com Detalhes, Agente e Ocupação")
 mapa_markers = folium.Map(location=[df_juazeiro['LATITUDE'].mean(), df_juazeiro['LONGITUDE'].mean()], zoom_start=12)
 
 for idx, row in df_juazeiro.iterrows():
@@ -103,7 +103,9 @@ for idx, row in df_juazeiro.iterrows():
         <b>Delito:</b> {row['DELITO']}<br>
         <b>Bairro:</b> {row['BAIRRO']}<br>
         <b>Data:</b> {row['DATA_FATO']}<br>
-        <b>Hora:</b> {row['HORA_FATO']}
+        <b>Hora:</b> {row['HORA_FATO']}<br>
+        <b>Agente (iniciais):</b> {row['INICIAIS']}<br>
+        <b>Ocupação:</b> {row['OCUPACAO']}
         """,
         icon=folium.Icon(color="red", icon="info-sign")
     ).add_to(mapa_markers)
