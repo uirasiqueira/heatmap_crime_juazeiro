@@ -32,7 +32,7 @@ GITHUB_URL = "https://github.com/uirasiqueira/heatmap_crime_juazeiro/blob/main/r
 def load_data(url):
     try:
         # Lê o CSV, ignorando linhas problemáticas
-        df = pd.read_csv(url, encoding='latin1', on_bad_lines='skip')
+        df = pd.read_csv(url, encoding='utf-8-sig', on_bad_lines='skip')
 
         # Normaliza nomes das colunas: remove espaços e coloca tudo em maiúsculo
         df.columns = df.columns.str.strip().str.upper()
