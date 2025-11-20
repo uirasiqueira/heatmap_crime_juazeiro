@@ -90,13 +90,28 @@ st.subheader("Mapa de Crimes - HeatMap (Intenso)")
 st_folium(mapa, width=900, height=600)
 
 
-# -------------------------
-# MAPA 2: Marcadores com detalhes (agente + ocupação)
-# -------------------------
-st.subheader("Mapa 2: Pontos de Criminalidade com Detalhes, Agente e Ocupação")
-mapa_markers = folium.Map(location=[df_juazeiro['LATITUDE'].mean(), df_juazeiro['LONGITUDE'].mean()], zoom_start=12)
+# =========================
+# MAPA 2: Marcadores Interativos com Cluster e Cores
+# =========================
+st.subheader("Mapa 2: Pontos de Criminalidade Detalhados")
+mapa_markers = folium.Map(
+    location=[df_juazeiro['LATITUDE'].mean(), df_juazeiro['LONGITUDE'].mean()],
+    zoom_start=12
+)
+
+# Cluster de marcadores
+cluster = MarkerCluster().add_to(mapa_markers)
+
+# Cores por tipo de delito
+color_map = {
+    "HOMICIDIO": "black",
+    "ROUBO": "red",
+    "FURTO": "blue",
+    "OUTROS": "green"
+}
 
 for idx, row in df_juazeiro.iterrows():
+    cor = color_map.get(str(row['DELITO']).upper(), "gray")
     folium.Marker(
         location=[row['LATITUDE'], row['LONGITUDE']],
         popup=f"""
@@ -107,7 +122,7 @@ for idx, row in df_juazeiro.iterrows():
         <b>Agente (iniciais):</b> {row['INICIAIS']}<br>
         <b>Ocupação:</b> {row['OCUPACAO']}
         """,
-        icon=folium.Icon(color="red", icon="info-sign")
-    ).add_to(mapa_markers)
+        icon=folium.Icon(color=cor, icon="info-sign")
+    ).add_to(cluster)
 
 st_folium(mapa_markers, width=900, height=600)
