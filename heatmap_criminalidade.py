@@ -33,6 +33,9 @@ def load_data(url):
     try:
         df = pd.read_csv(url, encoding='latin1', on_bad_lines='skip')
 
+        # Remove espaços extras nos nomes das colunas
+        df.columns = df.columns.str.strip()
+
         # Corrigir LATITUDE e LONGITUDE
         df['LATITUDE'] = pd.to_numeric(df['LATITUDE'].astype(str).str.replace(',', '.'), errors='coerce')
         df['LONGITUDE'] = pd.to_numeric(df['LONGITUDE'].astype(str).str.replace(',', '.'), errors='coerce')
@@ -44,9 +47,11 @@ def load_data(url):
         df_juazeiro = df_juazeiro.dropna(subset=['LATITUDE', 'LONGITUDE'])
 
         return df_juazeiro
+
     except Exception as e:
         st.error(f"Erro ao carregar CSV: {e}")
         return pd.DataFrame()
+
 
 # Carregar dados
 df_juazeiro = load_data(GITHUB_URL)
