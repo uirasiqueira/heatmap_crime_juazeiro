@@ -8,7 +8,7 @@ from streamlit_folium import st_folium
 # Configurações do Streamlit
 # =========================
 st.set_page_config(layout="wide")
-st.title("Mapa de Crimes de Juazeiro")
+st.title("Mapa de Crimes de Juazeiro-BA")
 st.markdown("Visualize a localização dos crimes na cidade em um mapa interativo.")
 
 # =========================
@@ -55,16 +55,20 @@ if df_juazeiro.empty:
     st.stop()
 else:
     st.markdown("""
-    ### Sobre os dados
-    Este conjunto contém registros de ocorrências policiais na cidade de Juazeiro (BA).  
-    A base inclui informações como:
-    - Tipo de delito  
-    - Bairro  
-    - Data e hora do fato  
-    - Coordenadas geográficas (latitude e longitude)  
+Este dashboard apresenta a criminalidade em Juazeiro-BA a partir de dados oficiais. 
+Ele oferece duas visualizações complementares:
 
-    O mapa abaixo utiliza essas coordenadas para gerar uma visualização de calor das áreas com maior concentração de ocorrências.
-    """)
+1. Mapa de Calor (HeatMap): mostra a densidade de crimes por região, permitindo identificar rapidamente os bairros com maior concentração de ocorrências. Quanto mais intensa a cor, maior a incidência de crimes naquele ponto.
+
+2. Mapa Detalhado com Ícones: cada ocorrência é representada por um marcador em forma de exclamação. Ao clicar em cada ícone, você pode visualizar informações detalhadas da ocorrência, como:
+   - Tipo de crime (Delito)
+   - Bairro
+   - Data e hora do fato
+   - Idade do suspeito/vítima
+   - Iniciais e ocupação das vítimas
+
+Estas duas perspectivas permitem tanto uma **análise macro**, com foco em áreas críticas, quanto uma **análise micro**, com informações detalhadas de cada ocorrência.
+""")
 
 # =========================
 # Criar mapa
