@@ -34,11 +34,12 @@ def load_data(url):
         df = pd.read_csv(url, encoding='latin1', on_bad_lines='skip')
 
         # Remove espaços extras nos nomes das colunas
-        df.columns = df.columns.str.strip()
+        df.columns = df.columns.str.strip().str.upper()
 
         # Corrigir LATITUDE e LONGITUDE
         df['LATITUDE'] = pd.to_numeric(df['LATITUDE'].astype(str).str.replace(',', '.'), errors='coerce')
         df['LONGITUDE'] = pd.to_numeric(df['LONGITUDE'].astype(str).str.replace(',', '.'), errors='coerce')
+
 
         # Filtrar Juazeiro-BA
         df_juazeiro = df[df['MUNICIPIO FATO'].str.contains('Juazeiro', case=False, na=False)]
