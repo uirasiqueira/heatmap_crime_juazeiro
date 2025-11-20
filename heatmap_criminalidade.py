@@ -54,8 +54,17 @@ df_juazeiro = load_data(GITHUB_URL)
 if df_juazeiro.empty:
     st.stop()
 else:
-    st.subheader("Preview dos dados filtrados")
-    st.dataframe(df_juazeiro.head())
+    st.markdown("""
+    ### Sobre os dados
+    Este conjunto contém registros de ocorrências policiais na cidade de Juazeiro (BA).  
+    A base inclui informações como:
+    - Tipo de delito  
+    - Bairro  
+    - Data e hora do fato  
+    - Coordenadas geográficas (latitude e longitude)  
+
+    O mapa abaixo utiliza essas coordenadas para gerar uma visualização de calor das áreas com maior concentração de ocorrências.
+    """)
 
 # =========================
 # Criar mapa
