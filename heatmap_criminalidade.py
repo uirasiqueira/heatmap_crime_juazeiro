@@ -123,7 +123,7 @@ for idx, row in df_juazeiro.iterrows():
         <b>Data:</b> {row['DATA_FATO']}<br>
         <b>Hora:</b> {row['HORA_FATO']}<br>
         <b>Idade:</b> {row['IDADE']}<br>
-        <b>Agente (iniciais):</b> {row['INICIAIS']}<br>
+        <b>Vítima (iniciais):</b> {row['INICIAIS']}<br>
         <b>Ocupação:</b> {row['OCUPACAO']}
         """
 
