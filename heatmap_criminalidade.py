@@ -12,69 +12,79 @@ import pandas as pd
 import folium
 from folium.plugins import HeatMap
 from streamlit_folium import st_folium
+import requests
+import zipfile
+import io
 
-# =========================
-# Configurações do Streamlit
-# =========================
-st.set_page_config(layout="wide")
-st.title("Mapa de Crimes de Juazeiro")
-st.markdown("Visualize a localização dos crimes na cidade em um mapa interativo.")
+st.set_page_config(page_title="Heatmap Criminalidade Juazeiro", layout="wide")
 
-# =========================
-# CSV no GitHub
-# =========================
-GITHUB_URL = "https://raw.githubusercontent.com/uirasiqueira/heatmap_crime_juazeiro/main/raw.zip"
-df = pd.read_csv(GITHUB_URL, compression='zip', encoding='latin1')
-# =========================
-# Função para carregar dados
-# =========================
+st.title("Mapa de Criminalidade – Juazeiro/BA")
+
+# URL do ZIP no GitHub
+GITHUB_ZIP_URL = "https://raw.githubusercontent.com/uirasiqueira/heatmap_crime_juazeiro/main/raw.zip"
+
 @st.cache_data
-def load_data(url):
+def load_data():
     try:
-        df = pd.read_csv(url, encoding='latin1', on_bad_lines='skip')
+        # 1. Baixar ZIP
+        response = requests.get(GITHUB_ZIP_URL)
+        response.raise_for_status()
 
-        # Padronizar nomes das colunas
-        df.columns = df.columns.str.strip().str.upper()
+        # 2. Abrir ZIP em memória
+        zip_file = zipfile.ZipFile(io.BytesIO(response.content))
 
-        # Corrigir LATITUDE e LONGITUDE
-        df['LATITUDE'] = pd.to_numeric(df['LATITUDE'].astype(str).str.replace(',', '.'), errors='coerce')
-        df['LONGITUDE'] = pd.to_numeric(df['LONGITUDE'].astype(str).str.replace(',', '.'), errors='coerce')
+        # 3. Pegar o único CSV dentro do ZIP
+        csv_name = zip_file.namelist()[0]
 
-        # Filtrar Juazeiro
-        df_juazeiro = df[df['MUNICIPIO FATO'].str.contains('JUAZEIRO', na=False)]
+        # 4. Ler CSV
+        df = pd.read_csv(zip_file.open(csv_name), encoding="latin1")
 
-        df_juazeiro = df_juazeiro.dropna(subset=['LATITUDE', 'LONGITUDE'])
+        # -------------------------
+        # NORMALIZAÇÃO DA TABELA
+        # -------------------------
+        df.columns = (
+            df.columns
+            .str.strip()
+            .str.replace('\ufeff', '')  # remove BOM
+            .str.upper()
+        )
 
-        return df_juazeiro
+        # Garantir que as colunas existem
+        if "LATITUDE" not in df.columns or "LONGITUDE" not in df.columns:
+            raise ValueError("O arquivo não possui LATITUDE e LONGITUDE após normalização.")
+
+        # Corrigir vírgulas → ponto
+        df["LATITUDE"] = df["LATITUDE"].astype(str).str.replace(",", ".")
+        df["LONGITUDE"] = df["LONGITUDE"].astype(str).str.replace(",", ".")
+
+        # Converter para float
+        df["LATITUDE"] = pd.to_numeric(df["LATITUDE"], errors="coerce")
+        df["LONGITUDE"] = pd.to_numeric(df["LONGITUDE"], errors="coerce")
+
+        # Remover coordenadas inválidas
+        df = df.dropna(subset=["LATITUDE", "LONGITUDE"])
+
+        return df
 
     except Exception as e:
         st.error(f"Erro ao carregar CSV: {e}")
-        return pd.DataFrame()
+        return None
 
 
-# Carregar dados
-df_juazeiro = load_data(GITHUB_URL)
+df = load_data()
 
-# Preview dos dados
-if df_juazeiro.empty:
-    st.stop()
+if df is not None and not df.empty:
+    st.success("Dados carregados com sucesso!")
+
+    # -------------------------
+    # MAPA
+    # -------------------------
+    m = folium.Map(location=[-9.4167, -40.5033], zoom_start=12)
+
+    heat_data = df[["LATITUDE", "LONGITUDE"]].values.tolist()
+    HeatMap(heat_data, radius=10).add_to(m)
+
+    st_folium(m, width=900, height=600)
+
 else:
-    st.subheader("Preview dos dados filtrados")
-    st.dataframe(df_juazeiro.head())
-
-# =========================
-# Criar mapa
-# =========================
-mapa = folium.Map(
-    location=[df_juazeiro['LATITUDE'].mean(), df_juazeiro['LONGITUDE'].mean()],
-    zoom_start=12
-)
-
-# Adicionar HeatMap
-heat_data = df_juazeiro[['LATITUDE', 'LONGITUDE']].values.tolist()
-HeatMap(heat_data).add_to(mapa)
-
-# Exibir mapa no Streamlit
-st.subheader("Mapa de Crimes - HeatMap")
-st_folium(mapa, width=800, height=600)
-
+    st.warning("Nenhum dado carregado.")
