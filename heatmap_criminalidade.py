@@ -23,7 +23,7 @@ st.markdown("Visualize a localização dos crimes na cidade em um mapa interativ
 # =========================
 # CSV no GitHub
 # =========================
-GITHUB_URL = "https://raw.githubusercontent.com/SEU_USUARIO/mapas_crime_juazeiro/main/raw/raw.csv"
+GITHUB_URL = "https://raw.githubusercontent.com/uirasiqueira/mapas_crime_juazeiro/main/raw/01_MORTES_VIOLENTAS_ESTADO_MICRODADOS"
 
 # =========================
 # Função para carregar dados
