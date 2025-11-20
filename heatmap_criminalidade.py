@@ -94,12 +94,12 @@ st_folium(mapa, width=900, height=600)
 # MAPA 2: Marcadores Interativos com Cluster e Cores
 # =========================
 st.subheader("Mapa 2: Pontos de Criminalidade Detalhados")
+
 mapa_markers = folium.Map(
     location=[df_juazeiro['LATITUDE'].mean(), df_juazeiro['LONGITUDE'].mean()],
     zoom_start=12
 )
 
-# Cluster de marcadores
 cluster = MarkerCluster().add_to(mapa_markers)
 
 # Cores por tipo de delito
@@ -107,22 +107,26 @@ color_map = {
     "HOMICIDIO": "black",
     "ROUBO": "red",
     "FURTO": "blue",
+    "AGRESSAO": "orange",
     "OUTROS": "green"
 }
 
+# Criar marcadores
 for idx, row in df_juazeiro.iterrows():
-    cor = color_map.get(str(row['DELITO']).upper(), "gray")
-    folium.Marker(
-        location=[row['LATITUDE'], row['LONGITUDE']],
-        popup=f"""
-        <b>Delito:</b> {row['DELITO']}<br>
-        <b>Bairro:</b> {row['BAIRRO']}<br>
-        <b>Data:</b> {row['DATA_FATO']}<br>
-        <b>Hora:</b> {row['HORA_FATO']}<br>
-        <b>Vítima (iniciais):</b> {row['INICIAIS']}<br>
-        <b>Ocupação:</b> {row['OCUPACAO']}
-        """,
-        icon=folium.Icon(color=cor, icon="info-sign")
-    ).add_to(cluster)
+    if pd.notna(row['LATITUDE']) and pd.notna(row['LONGITUDE']):
+        cor = color_map.get(str(row['DELITO']).upper(), "gray")
+        folium.Marker(
+            location=[row['LATITUDE'], row['LONGITUDE']],
+            popup=f"""
+            <b>Delito:</b> {row['DELITO']}<br>
+            <b>Bairro:</b> {row['BAIRRO']}<br>
+            <b>Data:</b> {row['DATA_FATO']}<br>
+            <b>Hora:</b> {row['HORA_FATO']}<br>
+            <b>Idade:</b> {row['IDADE']}<br>
+            <b>Agente (iniciais):</b> {row['INICIAIS']}<br>
+            <b>Ocupação:</b> {row['OCUPACAO']}
+            """,
+            icon=folium.Icon(color=cor, icon="info-sign")
+        ).add_to(cluster)
 
 st_folium(mapa_markers, width=900, height=600)
