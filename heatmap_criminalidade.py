@@ -93,7 +93,7 @@ st_folium(mapa, width=900, height=600)
 # =========================
 # MAPA 2: Marcadores Interativos com Cluster e Cores
 # =========================
-st.subheader("Mapa 2: Pontos de Criminalidade Detalhados")
+st.subheader("Mapa 2: Pontos de Criminalidade Detalhados (ícones)")
 
 mapa_markers = folium.Map(
     location=[df_juazeiro['LATITUDE'].mean(), df_juazeiro['LONGITUDE'].mean()],
@@ -102,20 +102,20 @@ mapa_markers = folium.Map(
 
 cluster = MarkerCluster().add_to(mapa_markers)
 
-# Cores para cada tipo de delito
+# Cores para cada tipo de delito (usadas no icon color)
 color_map = {
-    "HOMICIDIO": "#8B0000",  # vermelho escuro
-    "ROUBO": "#FF0000",      # vermelho
-    "FURTO": "#0000FF",      # azul
-    "AGRESSAO": "#FFA500",   # laranja
-    "OUTROS": "#008000"      # verde
+    "HOMICIDIO": "darkred",
+    "ROUBO": "red",
+    "FURTO": "blue",
+    "AGRESSAO": "orange",
+    "OUTROS": "green"
 }
 
 for idx, row in df_juazeiro.iterrows():
     if pd.notna(row['LATITUDE']) and pd.notna(row['LONGITUDE']):
         # Normalizar nome do delito
         delito = str(row['DELITO']).strip().upper()
-        cor = color_map.get(delito, "#808080")  # cinza se não definido
+        cor = color_map.get(delito, "gray")  # cinza se não definido
 
         popup_html = f"""
         <b>Delito:</b> {row['DELITO']}<br>
@@ -127,13 +127,9 @@ for idx, row in df_juazeiro.iterrows():
         <b>Ocupação:</b> {row['OCUPACAO']}
         """
 
-        folium.CircleMarker(
+        folium.Marker(
             location=[row['LATITUDE'], row['LONGITUDE']],
-            radius=6,
-            color=cor,
-            fill=True,
-            fill_color=cor,
-            fill_opacity=0.7,
+            icon=folium.Icon(icon="exclamation", prefix='fa', color=cor),
             popup=popup_html
         ).add_to(cluster)
 
