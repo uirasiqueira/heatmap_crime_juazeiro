@@ -100,7 +100,9 @@ mapa_markers = folium.Map(
     zoom_start=12
 )
 
-# Cores para cada tipo de delito
+cluster = MarkerCluster().add_to(mapa_markers)
+
+# Cores para cada tipo de delito (usadas no icon color)
 color_map = {
     "HOMICIDIO": "darkred",
     "ROUBO": "red",
@@ -111,8 +113,9 @@ color_map = {
 
 for idx, row in df_juazeiro.iterrows():
     if pd.notna(row['LATITUDE']) and pd.notna(row['LONGITUDE']):
+        # Normalizar nome do delito
         delito = str(row['DELITO']).strip().upper()
-        cor = color_map.get(delito, "gray")  # cor padrão se não definido
+        cor = color_map.get(delito, "gray")  # cinza se não definido
 
         popup_html = f"""
         <b>Delito:</b> {row['DELITO']}<br>
@@ -120,7 +123,7 @@ for idx, row in df_juazeiro.iterrows():
         <b>Data:</b> {row['DATA_FATO']}<br>
         <b>Hora:</b> {row['HORA_FATO']}<br>
         <b>Idade:</b> {row['IDADE']}<br>
-        <b>Vítima (iniciais):</b> {row['INICIAIS']}<br>
+        <b>Agente (iniciais):</b> {row['INICIAIS']}<br>
         <b>Ocupação:</b> {row['OCUPACAO']}
         """
 
@@ -128,6 +131,9 @@ for idx, row in df_juazeiro.iterrows():
             location=[row['LATITUDE'], row['LONGITUDE']],
             icon=folium.Icon(icon="exclamation", prefix='fa', color=cor),
             popup=popup_html
-        ).add_to(mapa_markers)
+        ).add_to(cluster)
 
 st_folium(mapa_markers, width=900, height=600)
+
+
+
