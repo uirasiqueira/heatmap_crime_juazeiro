@@ -15,11 +15,11 @@ scope = ["https://www.googleapis.com/auth/spreadsheets",
          "https://www.googleapis.com/auth/drive"]
 
 credentials = Credentials.from_service_account_info(
-    st.secrets["gcp"], scopes=scope
+    st.secrets["gcp_service_account"],  # <<< ALTERADO
+    scopes=scope
 )
 gc = gspread.authorize(credentials)
-sh = gc.open_by_key(st.secrets["gcp"]["sheet_id"])
-
+sh = gc.open_by_key(st.secrets["sheets"]["sheet_id"])
 worksheet = sh.sheet1  # primeira aba
 
 # =========================
