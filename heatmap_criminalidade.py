@@ -12,7 +12,8 @@ from datetime import datetime
 # Conectar ao Google Sheets
 # =========================
 scope = ["https://www.googleapis.com/auth/spreadsheets",
-         "https://www.googleapis.com/auth/drive"]
+         "https://www.googleapis.com/auth/drive",
+         "https://www.googleapis.com/auth/drive.file"]
 
 credentials = Credentials.from_service_account_info(
     st.secrets["gcp_service_account"],  # <<< ALTERADO
