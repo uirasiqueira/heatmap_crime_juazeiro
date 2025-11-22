@@ -1,8 +1,31 @@
 import streamlit as st
 import pandas as pd
 import folium
+import gspread
 from folium.plugins import HeatMap, MarkerCluster
 from streamlit_folium import st_folium
+from google.oauth2.service_account import Credentials
+from datetime import datetime
+
+
+# =========================
+# Conectar ao Google Sheets
+# =========================
+scope = ["https://www.googleapis.com/auth/spreadsheets",
+         "https://www.googleapis.com/auth/drive"]
+
+credentials = Credentials.from_service_account_info(
+    st.secrets["gcp"], scopes=scope
+)
+gc = gspread.authorize(credentials)
+sh = gc.open_by_key(st.secrets["gcp"]["sheet_id"])
+worksheet = sh.sheet1  # primeira aba
+
+# =========================
+# Registrar visita
+# =========================
+now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+worksheet.append_row([now])
 
 # =========================
 # Configurações do Streamlit
