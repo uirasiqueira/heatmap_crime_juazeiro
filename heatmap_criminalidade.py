@@ -18,11 +18,16 @@ credentials = Credentials.from_service_account_info(
     st.secrets["gcp"], scopes=scope
 )
 gc = gspread.authorize(credentials)
+sheet_id = st.secrets["gcp"]["sheet_id"]
+
 try:
-    sh = gc.open_by_key(st.secrets["gcp"]["sheet_id"])
-    st.write("ACESSO PERMITIDO! 👍")
+    sh = gc.open_by_key(sheet_id)
+    st.success("Consegui abrir a planilha! ✔️")
 except Exception as e:
-    st.write("ERRO DE ACESSO ❌:", e)
+    st.error("Erro ao abrir a planilha:")
+    st.write(e)
+    st.stop()
+
 worksheet = sh.sheet1  # primeira aba
 
 # =========================
