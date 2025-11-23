@@ -4,10 +4,39 @@ import folium
 import gspread
 from folium.plugins import HeatMap, MarkerCluster
 from streamlit_folium import st_folium
+from streamlit.components.v1 import html
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 import uuid
 
+
+# ==========================================
+# 1. Função para detectar se o usuário é REAL
+# ==========================================
+def usuario_real():
+    js_code = """
+    <script>
+        window.parent.postMessage({isUser: true}, "*");
+    </script>
+    """
+    html(js_code, height=0)
+
+    msg = st.experimental_get_query_params().get("user", [None])[0]
+    return msg == "1"
+
+
+# Listener que atualiza a URL com user=1 quando um navegador REAL carrega a página
+st.markdown("""
+<script>
+window.addEventListener("message", (event) => {
+    if (event.data.isUser === true) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("user", "1");
+        window.history.replaceState({}, "", url);
+    }
+});
+</script>
+""", unsafe_allow_html=True)
 
 # =========================
 # Conectar ao Google Sheets
@@ -23,22 +52,19 @@ gc = gspread.authorize(credentials)
 sh = gc.open_by_key(st.secrets["sheets"]["sheet_id"])
 worksheet = sh.sheet1  # primeira aba
 
-# =========================
-# Registrar visita (APENAS 1 VEZ)
-# =========================
-if "visitor_id" not in st.session_state:
-    # gerar ID só na PRIMEIRA visita
-    st.session_state.visitor_id = str(uuid.uuid4())  
+# ==========================================================
+# Registrar visita SOMENTE quando for usuário real
+# ==========================================================
+if usuario_real() and "visitor_id" not in st.session_state:
+
+    st.session_state.visitor_id = str(uuid.uuid4())
     st.session_state.first_access_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     # salvar no Google Sheets
     worksheet.append_row([st.session_state.visitor_id, st.session_state.first_access_time])
 
-visitor_id = st.session_state.visitor_id
-first_access_time = st.session_state.first_access_time
-
-# Mostrar no topo do app
-st.markdown(f"📅 Acessado em: **{first_access_time}** UTC")
+visitor_id = st.session_state.get("visitor_id", "—")
+first_access_time = st.session_state.get("first_access_time", "—")
 
 
 # =========================
