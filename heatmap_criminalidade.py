@@ -10,28 +10,48 @@ from datetime import datetime
 import uuid
 
 
-# ==========================================
-# 1. Função para detectar se o usuário é REAL
-# ==========================================
-def usuario_real():
+# ======================================================
+# 1. Função para detectar se o usuário é REAL e coletar dados
+# ======================================================
+def coletar_infos_usuario():
+
     js_code = """
     <script>
-        window.parent.postMessage({isUser: true}, "*");
+        const userData = {
+            isUser: true,
+            userAgent: navigator.userAgent,
+            language: navigator.language,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            platform: navigator.platform,
+            deviceMemory: navigator.deviceMemory || "unknown",
+            hardwareConcurrency: navigator.hardwareConcurrency || "unknown",
+            isMobile: /Mobi|Android/i.test(navigator.userAgent)
+        };
+
+        window.parent.postMessage(userData, "*");
     </script>
     """
+
     html(js_code, height=0)
 
-    msg = st.experimental_get_query_params().get("user", [None])[0]
-    return msg == "1"
+    params = st.experimental_get_query_params()
+    if "userdata" in params:
+        try:
+            return json.loads(params["userdata"][0])
+        except:
+            return None
+
+    return None
 
 
-# Listener que atualiza a URL com user=1 quando um navegador REAL carrega a página
+# Listener que grava dados na URL quando o JavaScript envia
 st.markdown("""
 <script>
 window.addEventListener("message", (event) => {
     if (event.data.isUser === true) {
+        const encoded = encodeURIComponent(JSON.stringify(event.data));
         const url = new URL(window.location.href);
-        url.searchParams.set("user", "1");
+        url.searchParams.set("userdata", encoded);
         window.history.replaceState({}, "", url);
     }
 });
@@ -53,15 +73,29 @@ sh = gc.open_by_key(st.secrets["sheets"]["sheet_id"])
 worksheet = sh.sheet1  # primeira aba
 
 # ==========================================================
-# Registrar visita SOMENTE quando for usuário real
+# Registrar visita SOMENTE quando dados do navegador chegarem
 # ==========================================================
-if usuario_real() and "visitor_id" not in st.session_state:
+user_infos = coletar_infos_usuario()
+
+if user_infos and "visitor_id" not in st.session_state:
 
     st.session_state.visitor_id = str(uuid.uuid4())
     st.session_state.first_access_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # salvar no Google Sheets
-    worksheet.append_row([st.session_state.visitor_id, st.session_state.first_access_time])
+    browser = user_infos.get("userAgent", "unknown")
+    timezone = user_infos.get("timezone", "unknown")
+    platform = user_infos.get("platform", "unknown")
+    is_mobile = "Mobile" if user_infos.get("isMobile") else "Desktop"
+
+    # salvar tudo no Sheets
+    worksheet.append_row([
+        st.session_state.visitor_id,
+        st.session_state.first_access_time,
+        browser,
+        platform,
+        is_mobile,
+        timezone
+    ])
 
 visitor_id = st.session_state.get("visitor_id", "—")
 first_access_time = st.session_state.get("first_access_time", "—")
