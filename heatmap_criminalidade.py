@@ -4,10 +4,10 @@ import folium
 from folium.plugins import HeatMap, MarkerCluster
 from streamlit_folium import st_folium
 from streamlit.components.v1 import html
-from google.oauth2.service_account import Credentials
 from datetime import datetime
 import uuid
 import json
+import gspread
 
 # =========================
 # Função para coletar info do navegador
@@ -69,18 +69,11 @@ window.addEventListener("message", (event) => {
 # =========================
 # Conectar ao Google Sheets
 # =========================
-scope = ["https://www.googleapis.com/auth/spreadsheets",
-         "https://www.googleapis.com/auth/drive"]
-
-credentials = Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"],
-    scopes=scope
-)
-gc = gspread.authorize(credentials)
+gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
 
 sh = gc.open_by_key(st.secrets["sheets"]["sheet_id"])
-worksheet_visitas = sh.sheet1   # aba 1: visitas
-worksheet_usuarios = sh.worksheet("usuarios")  # aba 2: informações do usuário
+worksheet_visitas = sh.sheet1                  # Aba 1: visitas
+worksheet_usuarios = sh.worksheet("usuarios")  # Aba 2: informações do usuário
 
 # =========================
 # Registrar visita + info do usuário
