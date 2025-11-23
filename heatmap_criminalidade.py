@@ -38,8 +38,7 @@ visitor_id = st.session_state.visitor_id
 first_access_time = st.session_state.first_access_time
 
 # Mostrar no topo do app
-st.markdown(f"### 👤 Seu código de identificação: **{visitor_id}**")
-st.markdown(f"📅 Primeiro acesso registrado em: **{first_access_time}**")
+st.markdown(f"📅 Acessado em: **{first_access_time}** UTC")
 
 
 # =========================
