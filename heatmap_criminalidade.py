@@ -15,32 +15,18 @@ scope = ["https://www.googleapis.com/auth/spreadsheets",
          "https://www.googleapis.com/auth/drive"]
 
 credentials = Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"],
+    st.secrets["gcp_service_account"],  # <<< ALTERADO
     scopes=scope
 )
 gc = gspread.authorize(credentials)
 sh = gc.open_by_key(st.secrets["sheets"]["sheet_id"])
 worksheet = sh.sheet1  # primeira aba
 
-
-# ================================
-#      GERAR SESSION ID ÚNICO
-# ================================
-
-if "session_id" not in st.session_state:
-    st.session_state.session_id = str(uuid.uuid4())
-
-# ================================
-#     REGISTRAR VISITA 1 VEZ
-# ================================
-
-if "visit_logged" not in st.session_state:
-    st.session_state.visit_logged = False
-
-if not st.session_state.visit_logged:
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    worksheet.append_row([st.session_state.session_id, timestamp])
-    st.session_state.visit_logged = True
+# =========================
+# Registrar visita
+# =========================
+now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+worksheet.append_row([now])
 
 # =========================
 # Configurações do Streamlit
@@ -182,7 +168,6 @@ with col2:
             ).add_to(cluster)
 
     st_folium(mapa_markers, height=600, width="100%")
-
 
 
 
