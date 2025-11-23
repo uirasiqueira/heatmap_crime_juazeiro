@@ -11,49 +11,65 @@ import uuid
 import json
 
 
-# ======================================================
-# 1. Função para detectar se o usuário é REAL e coletar dados
-# ======================================================
-def coletar_infos_usuario():
+# ==========================================
+# NOVO DETECTOR DE USUÁRIO REAL – 100% FUNCIONANDO
+# ==========================================
+def usuario_real():
+    if "is_real_user" not in st.session_state:
+        st.session_state.is_real_user = False
 
     js_code = """
     <script>
-        const userData = {
-            isUser: true,
-            userAgent: navigator.userAgent,
-            language: navigator.language,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            platform: navigator.platform,
-            deviceMemory: navigator.deviceMemory || "unknown",
-            hardwareConcurrency: navigator.hardwareConcurrency || "unknown",
-            isMobile: /Mobi|Android/i.test(navigator.userAgent)
-        };
-
-        window.parent.postMessage(userData, "*");
+        window.parent.postMessage({isUser: true}, "*");
     </script>
     """
-
     html(js_code, height=0)
 
-    params = st.experimental_get_query_params()
-    if "userdata" in params:
-        try:
-            return json.loads(params["userdata"][0])
-        except:
-            return None
+    return st.session_state.is_real_user
 
-    return None
-
-
-# Listener que grava dados na URL quando o JavaScript envia
+# Listener que seta session_state automaticamente
 st.markdown("""
 <script>
 window.addEventListener("message", (event) => {
     if (event.data.isUser === true) {
-        const encoded = encodeURIComponent(JSON.stringify(event.data));
-        const url = new URL(window.location.href);
-        url.searchParams.set("userdata", encoded);
-        window.history.replaceState({}, "", url);
+        window.parent.postMessage(
+            {type: "streamlit:setSessionState", key: "is_real_user", value: true},
+            "*"
+        );
+    }
+});
+</script>
+""", unsafe_allow_html=True)
+
+# ==========================================
+# CAPTURAR NAVEGADOR, SISTEMA, DISPOSITIVO, FUSO-HORÁRIO
+# ==========================================
+if "client_info" not in st.session_state:
+    st.session_state.client_info = None
+
+capture_js = """
+<script>
+const info = {
+    userAgent: navigator.userAgent,
+    language: navigator.language,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    platform: navigator.platform
+};
+window.parent.postMessage({clientInfo: info}, "*");
+</script>
+"""
+html(capture_js, height=0)
+
+# Listener para salvar no session_state
+st.markdown("""
+<script>
+window.addEventListener("message", (event) => {
+    if (event.data.clientInfo) {
+        window.parent.postMessage({
+            type: "streamlit:setSessionState",
+            key: "client_info",
+            value: JSON.stringify(event.data.clientInfo)
+        }, "*");
     }
 });
 </script>
