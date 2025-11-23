@@ -26,13 +26,20 @@ worksheet = sh.sheet1  # primeira aba
 # =========================
 # Registrar visita (APENAS 1 VEZ)
 # =========================
-if "visit_logged" not in st.session_state:
-    st.session_state["visit_logged"] = False
+if "visitor_id" not in st.session_state:
+    # gerar ID só na PRIMEIRA visita
+    st.session_state.visitor_id = str(uuid.uuid4())  
+    st.session_state.first_access_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-if not st.session_state["visit_logged"]:
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    worksheet.append_row([now])
-    st.session_state["visit_logged"] = True
+    # salvar no Google Sheets
+    worksheet.append_row([st.session_state.visitor_id, st.session_state.first_access_time])
+
+visitor_id = st.session_state.visitor_id
+first_access_time = st.session_state.first_access_time
+
+# Mostrar no topo do app
+st.markdown(f"### 👤 Seu código de identificação: **{visitor_id}**")
+st.markdown(f"📅 Primeiro acesso registrado em: **{first_access_time}**")
 
 
 # =========================
