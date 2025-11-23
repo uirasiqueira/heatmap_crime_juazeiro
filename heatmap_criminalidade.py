@@ -4,78 +4,14 @@ import folium
 import gspread
 from folium.plugins import HeatMap, MarkerCluster
 from streamlit_folium import st_folium
-from streamlit.components.v1 import html
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 import uuid
-import json
+from user_agents import parse
 
-
-# ==========================================================
-# 1. Capturar informações do navegador via JavaScript
-# ==========================================================
-def coletar_info_cliente():
-    js = """
-    <script>
-    const info = {
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-    };
-    const jsonText = JSON.stringify(info);
-    window.parent.postMessage({clientInfo: jsonText}, "*");
-    </script>
-    """
-    html(js, height=0)
-
-
-# Listener para salvar os dados enviados pelo navegador
-st.markdown("""
-<script>
-window.addEventListener("message", (event) => {
-    if (event.data.clientInfo) {
-        const url = new URL(window.location.href);
-        url.searchParams.set("client_info", event.data.clientInfo);
-        window.history.replaceState({}, "", url);
-    }
-});
-</script>
-""", unsafe_allow_html=True)
-
-
-# ==========================================================
-# 2. Detectar se o usuário é REAL
-# ==========================================================
-def usuario_real():
-    js_code = """
-    <script>
-        window.parent.postMessage({isUser: true}, "*");
-    </script>
-    """
-    html(js_code, height=0)
-
-    msg = st.experimental_get_query_params().get("user", [None])[0]
-    return msg == "1"
-
-
-# Atualiza URL com user=1 para navegador real
-st.markdown("""
-<script>
-window.addEventListener("message", (event) => {
-    if (event.data.isUser === true) {
-        const url = new URL(window.location.href);
-        url.searchParams.set("user", "1");
-        window.history.replaceState({}, "", url);
-    }
-});
-</script>
-""", unsafe_allow_html=True)
-
-
-# ==========================================================
-# 3. Conectar ao Google Sheets
-# ==========================================================
+# =========================
+# 1. Conectar ao Google Sheets
+# =========================
 scope = ["https://www.googleapis.com/auth/spreadsheets",
          "https://www.googleapis.com/auth/drive"]
 
@@ -84,65 +20,75 @@ credentials = Credentials.from_service_account_info(
     scopes=scope
 )
 gc = gspread.authorize(credentials)
-
 sh = gc.open_by_key(st.secrets["sheets"]["sheet_id"])
-worksheet_visitas = sh.sheet1   # aba 1
+worksheet_visitas = sh.sheet1        # aba 1
 worksheet_usuarios = sh.worksheet("usuarios")  # aba 2
 
+# =========================
+# 2. Capturar dados do usuário (server-side)
+# =========================
+def coletar_infos_usuario():
+    user_agent_str = st.request.headers.get("user-agent", "")
+    accept_language = st.request.headers.get("accept-language", "")
+    
+    ua = parse(user_agent_str)
+    
+    browser = f"{ua.browser.family} {ua.browser.version_string}"
+    os = f"{ua.os.family} {ua.os.version_string}"
+    device = "Mobile" if ua.is_mobile else "Tablet" if ua.is_tablet else "PC"
+    language = accept_language.split(",")[0] if accept_language else "—"
+    
+    # Fuso horário não é garantido server-side; estimamos pelo locale do navegador se enviado
+    timezone = "—"
+    
+    return {
+        "browser": browser,
+        "os": os,
+        "device": device,
+        "language": language,
+        "timezone": timezone
+    }
 
-# ==========================================================
-# 4. Registrar visita + informações do usuário
-# ==========================================================
-coletar_info_cliente()
-
-query_params = st.experimental_get_query_params()
-client_info_json = query_params.get("client_info", [None])[0]
-
-if client_info_json:
-    try:
-        client_info = json.loads(client_info_json)
-        st.session_state["client_info"] = client_info
-    except:
-        pass
-
-if usuario_real() and "visitor_id" not in st.session_state:
-
+# =========================
+# 3. Registrar visita SOMENTE uma vez
+# =========================
+if "visitor_id" not in st.session_state:
     st.session_state.visitor_id = str(uuid.uuid4())
     st.session_state.first_access_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    visitor_id = st.session_state.visitor_id
+    first_access_time = st.session_state.first_access_time
 
     # Registrar visita (aba 1)
-    worksheet_visitas.append_row([
-        st.session_state.visitor_id,
-        st.session_state.first_access_time
-    ])
+    worksheet_visitas.append_row([visitor_id, first_access_time])
 
-    # Registrar informações do navegador (aba 2)
-    info = st.session_state.get("client_info", {})
+    # Registrar informações do usuário (aba 2)
+    user_info = coletar_infos_usuario()
+    st.session_state["client_info"] = user_info
     worksheet_usuarios.append_row([
-        st.session_state.visitor_id,
-        st.session_state.first_access_time,
-        info.get("userAgent", "—"),
-        info.get("platform", "—"),
-        info.get("language", "—"),
-        info.get("timezone", "—")
+        visitor_id,
+        first_access_time,
+        user_info["browser"],
+        user_info["os"],
+        user_info["device"],
+        user_info["language"],
+        user_info["timezone"]
     ])
+else:
+    visitor_id = st.session_state.visitor_id
+    first_access_time = st.session_state.first_access_time
+    user_info = st.session_state.get("client_info", {})
 
-
-visitor_id = st.session_state.get("visitor_id", "—")
-first_access_time = st.session_state.get("first_access_time", "—")
-
-
-# ==========================================================
-# Interface
-# ==========================================================
+# =========================
+# 4. Interface do Streamlit
+# =========================
 st.set_page_config(layout="wide")
 st.title("Mapa de Crimes de Juazeiro-BA")
+st.markdown(f"📅 Primeiro acesso registrado em: **{first_access_time}** UTC")
 st.markdown("Visualize a localização dos crimes na cidade em um mapa interativo.")
 
-
-# ==========================================================
-# Carregar dados do CSV ZIP
-# ==========================================================
+# =========================
+# 5. Carregar dados do CSV ZIP
+# =========================
 GITHUB_URL = "https://raw.githubusercontent.com/uirasiqueira/heatmap_crime_juazeiro/main/raw.zip"
 
 @st.cache_data
@@ -170,7 +116,6 @@ def load_data(url):
 
 df_juazeiro = load_data(GITHUB_URL)
 
-
 if df_juazeiro.empty:
     st.stop()
 else:
@@ -180,23 +125,19 @@ Ele oferece duas visualizações complementares:
 
 1. **Mapa de Calor:** mostra áreas com maior concentração de crimes.  
 2. **Mapa Detalhado:** exibe cada ocorrência individualmente, com ícone colorido por tipo de delito.  
-
-Assim você pode ter uma visão macro (distribuição geral) e micro (cada caso).
 """)
 
 
-# ==========================================================
-# MAPAS LADO A LADO
-# ==========================================================
+# =========================
+# 6. Mapas lado a lado
+# =========================
 col1, col2 = st.columns(2)
 
-
 # ----------------------------
-# MAPA 1 – HEATMAP
+# Mapa 1 – HeatMap
 # ----------------------------
 with col1:
     st.subheader("Heatmap de Criminalidade")
-
     mapa_heat = folium.Map(
         location=[df_juazeiro['LATITUDE'].mean(), df_juazeiro['LONGITUDE'].mean()],
         zoom_start=12
@@ -212,13 +153,11 @@ with col1:
 
     st_folium(mapa_heat, height=600, width="100%")
 
-
 # ----------------------------
-# MAPA 2 – MARCADORES
+# Mapa 2 – Marcadores
 # ----------------------------
 with col2:
     st.subheader("Mapa Detalhado com Marcadores")
-
     mapa_markers = folium.Map(
         location=[df_juazeiro['LATITUDE'].mean(), df_juazeiro['LONGITUDE'].mean()],
         zoom_start=12
@@ -235,7 +174,6 @@ with col2:
     }
 
     for idx, row in df_juazeiro.iterrows():
-
         delito = str(row['DELITO']).strip().upper()
         cor = color_map.get(delito, "gray")
 
